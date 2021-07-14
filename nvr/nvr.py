@@ -26,6 +26,7 @@ import argparse
 import multiprocessing
 import os
 import re
+import subprocess
 import sys
 import textwrap
 import time
@@ -81,7 +82,10 @@ class Nvr():
 
         os.environ['NVIM_LISTEN_ADDRESS'] = self.address
         try:
-            os.execvpe(args[0], args, os.environ)
+            if os.name == 'nt':
+                sys.exit(subprocess.run(args=args, env=os.environ).returncode)
+            else:
+                os.execvpe(args[0], args, os.environ)
         except FileNotFoundError:
             print("[!] Can't start new nvim process: '{}' is not in $PATH.".format(args[0]))
             sys.exit(1)
