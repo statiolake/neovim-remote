@@ -35,6 +35,8 @@ import traceback
 import psutil
 import pynvim
 
+DEFAULT_ADDRESS = r'\\.\pipe\nvimpipe' if os.name == 'nt' else '/tmp/nvimsocket'
+
 class Nvr():
     def __init__(self, address, silent=False):
         self.address = address
@@ -262,7 +264,7 @@ def parse_args(argv):
 
     parser.add_argument('--servername',
             metavar = '<addr>',
-            help    = 'Set the address to be used. This overrides the default "/tmp/nvimsocket" and $NVIM_LISTEN_ADDRESS.')
+            help    = f'Set the address to be used. This overrides the default "{DEFAULT_ADDRESS}" and $NVIM_LISTEN_ADDRESS.')
     parser.add_argument('--serverlist',
             action  = 'store_true',
             help    = 'Print the TCPv4 and Unix domain socket addresses of all nvim processes.')
@@ -335,14 +337,14 @@ def show_message(address):
 
                 Expose $NVIM_LISTEN_ADDRESS to the environment before
                 using nvr or use its --servername option. If neither
-                is given, nvr assumes \"/tmp/nvimsocket\".
+                is given, nvr assumes \"{}\".
 
                 $ NVIM_LISTEN_ADDRESS={} nvr file1 file2
                 $ nvr --servername {} file1 file2
                 $ nvr --servername 127.0.0.1:6789 file1 file2
 
             Use -s to suppress this message.
-        '''.format(address, address, address, address)))
+        '''.format(address, address, DEFAULT_ADDRESS, address, address)))
 
 
 def split_cmds_from_files(args):
@@ -412,7 +414,7 @@ def main(argv=sys.argv, env=os.environ):
         print_addresses()
         return
 
-    address = options.servername or env.get('NVIM_LISTEN_ADDRESS') or '/tmp/nvimsocket'
+    address = options.servername or env.get('NVIM_LISTEN_ADDRESS') or DEFAULT_ADDRESS
 
     nvr = Nvr(address, options.s)
     nvr.attach()
