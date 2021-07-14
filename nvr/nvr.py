@@ -85,7 +85,30 @@ class Nvr():
         os.environ['NVIM_LISTEN_ADDRESS'] = self.address
         try:
             if os.name == 'nt':
-                sys.exit(subprocess.run(args=args, env=os.environ).returncode)
+                # Check for the target executable is GUI application or not. If GUI, do
+                # not wait for the process exit.
+                is_gui = False
+
+                # To check the executable is a GUI application or not, we need to
+                # analyze the executable.
+                import shutil
+                import pefile
+                exe_path = shutil.which(args[0])
+                if not exe_path:
+                    raise FileNotFoundError(args[0])
+                if exe_path.lower().endswith(".exe"):
+                    exe = pefile.PE(exe_path)
+                    windows_gui = pefile.SUBSYSTEM_TYPE['IMAGE_SUBSYSTEM_WINDOWS_GUI']
+                    if exe.OPTIONAL_HEADER.Subsystem == windows_gui:
+                        is_gui = True
+
+                # Spawn and exit soon if it's GUI (waiting for finish editing when
+                # self.wait is set is a job for another process started before.)
+                if is_gui:
+                    subprocess.Popen(args=args, env=os.environ)
+                    sys.exit(0)
+                else:
+                    sys.exit(subprocess.run(args=args, env=os.environ).returncode)
             else:
                 os.execvpe(args[0], args, os.environ)
         except FileNotFoundError:
